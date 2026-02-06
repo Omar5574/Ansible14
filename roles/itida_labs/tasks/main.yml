@@ -1,0 +1,132 @@
+---
+# -------------------------------------------
+# 1. System & Security Configuration (Common)
+# -------------------------------------------
+- name: Configure Hostname
+  ios_config:
+    lines:
+      - hostname {{ inventory_hostname }}
+  notify: Save Config
+
+- name: Configure Banner MOTD
+  ios_config:
+    lines:
+      - "banner motd #{{ banner_text }}#"
+
+- name: Configure Passwords & Encryption
+  ios_config:
+    lines:
+      - enable password {{ enable_pass }}
+      - enable secret {{ enable_secret }}
+      - service password-encryption
+      - no ip domain-lookup
+  notify: Save Config
+
+- name: Configure Console Line
+  ios_config:
+    lines:
+      - password {{ console_pass }}
+      - login
+      - logging synchronous
+      - no logging console
+    parents: line console 0
+
+- name: Configure VTY Lines (SSH/Telnet)
+  ios_config:
+    lines:
+      - password {{ vty_pass }}
+      - login
+      - transport input telnet ssh
+    parents: line vty 0 4
+
+# -------------------------------------------
+# 2. Interface Configuration (The Chain)
+# -------------------------------------------
+# R1 Setup (e0/1 connecting to R2)
+- name: Configure R1 Interface (to R2)
+  ios_config:
+    lines:
+      - description Connection to R2
+      - ip address {{ ip_r1_to_r2 }} {{ subnet_mask }}
+      - no shutdown
+    parents: interface Ethernet0/1
+  when: inventory_hostname == 'R1'
+
+# R2 Setup (e0/1 to R1 AND e0/2 to R3)
+- name: Configure R2 Interface (to R1)
+  ios_config:
+    lines:
+      - description Connection to R1
+      - ip address {{ ip_r2_to_r1 }} {{ subnet_mask }}
+      - no shutdown
+    parents: interface Ethernet0/1
+  when: inventory_hostname == 'R2'
+
+- name: Configure R2 Interface (to R3)
+  ios_config:
+    lines:
+      - description Connection to R3
+      - ip address {{ ip_r2_to_r3 }} {{ subnet_mask }}
+      - no shutdown
+    parents: interface Ethernet0/2
+  when: inventory_hostname == 'R2'
+
+# R3 Setup (e0/2 to R2 AND e0/1 to R4)
+- name: Configure R3 Interface (to R2)
+  ios_config:
+    lines:
+      - description Connection to R2
+      - ip address {{ ip_r3_to_r2 }} {{ subnet_mask }}
+      - no shutdown
+    parents: interface Ethernet0/2
+  when: inventory_hostname == 'R3'
+
+- name: Configure R3 Interface (to R4)
+  ios_config:
+    lines:
+      - description Connection to R4
+      - ip address {{ ip_r3_to_r4 }} {{ subnet_mask }}
+      - no shutdown
+    parents: interface Ethernet0/1
+  when: inventory_hostname == 'R3'
+
+# R4 Setup (e0/1 to R3)
+- name: Configure R4 Interface (to R3)
+  ios_config:
+    lines:
+      - description Connection to R3
+      - ip address {{ ip_r4_to_r3 }} {{ subnet_mask }}
+      - no shutdown
+    parents: interface Ethernet0/1
+  when: inventory_hostname == 'R4'
+
+# -------------------------------------------
+# 3. Static Routing (Guaranteed Method)
+# -------------------------------------------
+# R1 needs to reach everyone via R2
+- name: Static Route on R1 (Default Route)
+  ios_config:
+    lines:
+      - "ip route 0.0.0.0 0.0.0.0 {{ ip_r2_to_r1 }}"
+  when: inventory_hostname == 'R1'
+
+# R4 needs to reach everyone via R3
+- name: Static Route on R4 (Default Route)
+  ios_config:
+    lines:
+      - "ip route 0.0.0.0 0.0.0.0 {{ ip_r3_to_r4 }}"
+  when: inventory_hostname == 'R4'
+
+# R2 needs to reach R4 network (10.34.34.0) via R3
+- name: Static Route on R2 (to R4 Net)
+  ios_config:
+    lines:
+      - "ip route 10.34.34.0 255.255.255.0 {{ ip_r3_to_r2 }}"
+  when: inventory_hostname == 'R2'
+
+# R3 needs to reach R1 network (10.12.12.0) via R2
+- name: Static Route on R3 (to R1 Net)
+  ios_config:
+    lines:
+      - "ip route 10.12.12.0 255.255.255.0 {{ ip_r2_to_r3 }}"
+  when: inventory_hostname == 'R3'

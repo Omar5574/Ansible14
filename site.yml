@@ -1,0 +1,7 @@
+---
+- name: Graduation Project Setup
+  hosts: routers
+  gather_facts: no
+
+  roles:
+    - itida_labs

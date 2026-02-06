@@ -1,0 +1,13 @@
+[routers]
+R1 ansible_host=192.168.21.130
+R2 ansible_host=192.168.21.131
+R3 ansible_host=192.168.21.132
+R4 ansible_host=192.168.21.133
+
+[routers:vars]
+ansible_user=admin
+ansible_password=cisco
+ansible_connection=network_cli
+ansible_network_os=ios
+# السماح بخوارزميات التشفير القديمة اللي ظهرت في إعدادات الراوتر
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o KexAlgorithms=+diffie-hellman-group-exchange-sha1 -o HostKeyAlgorithms=+ssh-rsa'

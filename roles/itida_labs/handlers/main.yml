@@ -1,0 +1,5 @@
+---
+- name: Save Config
+  ios_command:
+    commands:
+      - write memory
