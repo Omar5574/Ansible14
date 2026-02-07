@@ -20,3 +20,8 @@ ip_r3_to_r4: "10.34.34.3"
 ip_r4_to_r3: "10.34.34.4"
 
 subnet_mask: "255.255.255.0"
+
+
+# OSPF Configuration
+ospf_process_id: 1
+ospf_area: 0
